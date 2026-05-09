@@ -35,7 +35,8 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -83,6 +84,9 @@ fun NowPlayingScreen(
     modifier: Modifier = Modifier
 ) {
     val song = playerState.currentSong ?: return
+
+    var isSeeking by remember { mutableStateOf(false) }
+    var seekPosition by remember { mutableStateOf(0f) }
 
     val progress = if (playerState.duration > 0) {
         (playerState.currentPosition.toFloat() / playerState.duration.toFloat()).coerceIn(0f, 1f)
@@ -210,26 +214,37 @@ fun NowPlayingScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // ─── Seek bar (colored/green) ───
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp)),
-                color = SeekBarAccent,
-                trackColor = KuroOnSurfaceVariant.copy(alpha = 0.2f),
+            // ─── Interactive seek slider ───
+            Slider(
+                value = if (isSeeking) seekPosition else progress,
+                onValueChange = { value ->
+                    isSeeking = true
+                    seekPosition = value
+                },
+                onValueChangeFinished = {
+                    onSeekTo((seekPosition * playerState.duration).toLong())
+                    isSeeking = false
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = SliderDefaults.colors(
+                    thumbColor = SeekBarAccent,
+                    activeTrackColor = SeekBarAccent,
+                    inactiveTrackColor = KuroOnSurfaceVariant.copy(alpha = 0.2f)
+                )
             )
 
             // ─── Time labels ───
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 6.dp),
+                    .padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = formatDuration(playerState.currentPosition),
+                    text = formatDuration(
+                        if (isSeeking) (seekPosition * playerState.duration).toLong()
+                        else playerState.currentPosition
+                    ),
                     fontSize = 11.sp,
                     fontFamily = GothamFontFamily,
                     color = KuroOnSurfaceVariant,
