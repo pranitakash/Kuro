@@ -3,12 +3,16 @@ package com.kuro.music.presentation.navigation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SlowMotionVideo
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LibraryMusic
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SlowMotionVideo
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(
@@ -19,8 +23,8 @@ sealed class Screen(
 ) {
     data object Home : Screen("home", "Home", Icons.Filled.Home, Icons.Outlined.Home)
     data object Search : Screen("search", "Search", Icons.Filled.Search, Icons.Outlined.Search)
-    data object Library : Screen("library", "Library", Icons.Filled.LibraryMusic, Icons.Outlined.LibraryMusic)
-    data object Settings : Screen("settings", "Settings", Icons.Filled.Settings, Icons.Outlined.Settings)
+    data object Library : Screen("library", "Library", Icons.Filled.SlowMotionVideo, Icons.Outlined.SlowMotionVideo)
+    data object Settings : Screen("settings", "Settings", Icons.Filled.Person, Icons.Outlined.Person)
 
     // Detail screens
     data object NowPlaying : Screen("now_playing", "Now Playing", Icons.Filled.Home, Icons.Outlined.Home)

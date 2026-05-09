@@ -3,6 +3,7 @@ package com.kuro.music.presentation.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,25 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BrightnessMedium
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,12 +35,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kuro.music.presentation.ui.theme.GothamFontFamily
 import com.kuro.music.presentation.ui.theme.KuroError
 import com.kuro.music.presentation.ui.theme.KuroOnBackground
 import com.kuro.music.presentation.ui.theme.KuroOnSurfaceVariant
@@ -68,146 +64,87 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(Color.White)
             .verticalScroll(rememberScrollState())
-            .padding(top = 16.dp)
+            .statusBarsPadding()
     ) {
+        // ─── Large "Settings" title ───
         Text(
             text = "Settings",
-            fontSize = 28.sp,
+            fontSize = 32.sp,
+            fontFamily = GothamFontFamily,
             fontWeight = FontWeight.Bold,
             color = KuroOnBackground,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
         )
 
-        // ─── Playback ───
-        SettingsSectionHeader(icon = Icons.Filled.MusicNote, title = "Playback")
-
-        SettingsClickItem(
-            title = "Streaming Quality",
-            subtitle = state.streamingQuality.replaceFirstChar { it.uppercase() },
-            onClick = { showStreamQualityDialog = true }
-        )
-        SettingsClickItem(
-            title = "Download Quality",
-            subtitle = state.downloadQuality.replaceFirstChar { it.uppercase() },
-            onClick = { showDownloadQualityDialog = true }
-        )
-        SettingsToggleItem(
-            title = "Normalize Volume",
-            subtitle = "Equalize loudness across tracks",
-            checked = state.normalizeVolume,
-            onToggle = { viewModel.setNormalizeVolume(it) }
-        )
-        SettingsToggleItem(
-            title = "Gapless Playback",
-            subtitle = "Seamless transitions between tracks",
-            checked = state.gaplessPlayback,
-            onToggle = { viewModel.setGaplessPlayback(it) }
-        )
-
-        // Crossfade
-        Column(
+        // ─── Profile row ───
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .clickable { }
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Crossfade",
-                fontSize = 15.sp,
-                color = KuroOnBackground
-            )
-            Text(
-                text = if (state.crossfadeDuration == 0) "Off" else "${state.crossfadeDuration}s",
-                fontSize = 13.sp,
-                color = KuroOnSurfaceVariant
-            )
-            Slider(
-                value = state.crossfadeDuration.toFloat(),
-                onValueChange = { viewModel.setCrossfadeDuration(it.toInt()) },
-                valueRange = 0f..12f,
-                steps = 11,
-                colors = SliderDefaults.colors(
-                    thumbColor = KuroPrimary,
-                    activeTrackColor = KuroPrimary,
-                    inactiveTrackColor = KuroSurfaceVariant
+            // Profile avatar
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(KuroSurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = "Profile",
+                    tint = KuroOnSurfaceVariant,
+                    modifier = Modifier.size(28.dp)
                 )
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "kuro",
+                    fontSize = 17.sp,
+                    fontFamily = GothamFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = KuroOnBackground
+                )
+                Text(
+                    text = "View profile",
+                    fontSize = 13.sp,
+                    fontFamily = GothamFontFamily,
+                    color = KuroOnSurfaceVariant
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = KuroOnSurfaceVariant,
+                modifier = Modifier.size(22.dp)
             )
         }
 
-        SettingsDivider()
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // ─── Interface ───
-        SettingsSectionHeader(icon = Icons.Filled.BrightnessMedium, title = "Interface")
+        // ─── Account section ───
+        SettingsSectionTitle("Account")
+        SettingsRow("Account settings") { }
+        SettingsRow("Manage subscription") { }
+        SettingsRow("Restore purchases") { }
 
-        SettingsClickItem(
-            title = "Theme",
-            subtitle = state.themeMode.replaceFirstChar { it.uppercase() },
-            onClick = { showThemeDialog = true }
-        )
+        Spacer(modifier = Modifier.height(16.dp))
 
-        SettingsDivider()
+        // ─── Preferences section ───
+        SettingsSectionTitle("Preferences")
+        SettingsRow("Audio quality") { showStreamQualityDialog = true }
+        SettingsRow("Playback") { showThemeDialog = true }
+        SettingsRow("Downloads") { showDownloadQualityDialog = true }
 
-        // ─── Source ───
-        SettingsSectionHeader(icon = Icons.Filled.Code, title = "Source")
+        Spacer(modifier = Modifier.height(16.dp))
 
-        SettingsClickItem(
-            title = "Piped Instance",
-            subtitle = state.pipedInstance,
-            onClick = { }
-        )
-        SettingsToggleItem(
-            title = "yt-dlp Fallback",
-            subtitle = "Use yt-dlp when other methods fail",
-            checked = state.ytDlpFallback,
-            onToggle = { viewModel.setYtDlpFallback(it) }
-        )
-
-        SettingsDivider()
-
-        // ─── Privacy ───
-        SettingsSectionHeader(icon = Icons.Filled.Security, title = "Privacy")
-
-        SettingsToggleItem(
-            title = "Save Search History",
-            subtitle = "Remember your searches",
-            checked = state.saveSearchHistory,
-            onToggle = { viewModel.setSaveSearchHistory(it) }
-        )
-        SettingsToggleItem(
-            title = "Save Playback History",
-            subtitle = "Track what you listen to",
-            checked = state.savePlayHistory,
-            onToggle = { viewModel.setSavePlayHistory(it) }
-        )
-        SettingsClickItem(
-            title = "Clear Search History",
-            subtitle = "Remove all search history",
-            onClick = { showClearConfirmDialog = "search" }
-        )
-        SettingsClickItem(
-            title = "Clear Playback History",
-            subtitle = "Remove all playback history",
-            onClick = { showClearConfirmDialog = "playback" }
-        )
-
-        SettingsDivider()
-
-        // ─── Storage ───
-        SettingsSectionHeader(icon = Icons.Filled.Storage, title = "Storage")
-
-        SettingsClickItem(
-            title = "Clear Cache",
-            subtitle = "Free up cached data",
-            onClick = { showClearConfirmDialog = "cache" }
-        )
-
-        SettingsDivider()
-
-        // ─── About ───
-        SettingsSectionHeader(icon = Icons.Filled.Info, title = "About")
-
-        SettingsClickItem(title = "Kuro Music", subtitle = "Version 1.0.0", onClick = {})
-        SettingsClickItem(title = "Source Code", subtitle = "github.com/kuro-music", onClick = {})
-        SettingsClickItem(title = "Open Source Licenses", subtitle = "Third-party libraries", onClick = {})
+        // ─── Support section ───
+        SettingsSectionTitle("Support")
+        SettingsRow("Help center") { }
+        SettingsRow("Feedback") { }
 
         Spacer(modifier = Modifier.height(80.dp))
     }
@@ -260,8 +197,14 @@ fun SettingsScreen(
     showClearConfirmDialog?.let { type ->
         AlertDialog(
             onDismissRequest = { showClearConfirmDialog = null },
-            title = { Text("Clear ${type.replaceFirstChar { it.uppercase() }}?", fontWeight = FontWeight.Bold) },
-            text = { Text("This action cannot be undone.") },
+            title = {
+                Text(
+                    "Clear ${type.replaceFirstChar { it.uppercase() }}?",
+                    fontFamily = GothamFontFamily,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = { Text("This action cannot be undone.", fontFamily = GothamFontFamily) },
             confirmButton = {
                 TextButton(onClick = {
                     when (type) {
@@ -271,11 +214,13 @@ fun SettingsScreen(
                     }
                     showClearConfirmDialog = null
                 }) {
-                    Text("Clear", color = KuroError)
+                    Text("Clear", color = KuroError, fontFamily = GothamFontFamily)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showClearConfirmDialog = null }) { Text("Cancel") }
+                TextButton(onClick = { showClearConfirmDialog = null }) {
+                    Text("Cancel", fontFamily = GothamFontFamily)
+                }
             },
             containerColor = Color.White
         )
@@ -283,88 +228,40 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsSectionHeader(icon: ImageVector, title: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = KuroOnSurfaceVariant,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = title,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = KuroOnSurfaceVariant,
-            letterSpacing = 0.5.sp
-        )
-    }
+private fun SettingsSectionTitle(title: String) {
+    Text(
+        text = title,
+        fontSize = 14.sp,
+        fontFamily = GothamFontFamily,
+        fontWeight = FontWeight.Bold,
+        color = KuroOnBackground,
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+    )
 }
 
 @Composable
-private fun SettingsClickItem(
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
+private fun SettingsRow(title: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, fontSize = 15.sp, color = KuroOnBackground)
-            Text(text = subtitle, fontSize = 13.sp, color = KuroOnSurfaceVariant)
-        }
-    }
-}
-
-@Composable
-private fun SettingsToggleItem(
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onToggle: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onToggle(!checked) }
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, fontSize = 15.sp, color = KuroOnBackground)
-            Text(text = subtitle, fontSize = 13.sp, color = KuroOnSurfaceVariant)
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Switch(
-            checked = checked,
-            onCheckedChange = onToggle,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = KuroPrimary,
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = KuroSurfaceVariant
-            )
+        Text(
+            text = title,
+            fontSize = 15.sp,
+            fontFamily = GothamFontFamily,
+            color = KuroOnBackground
+        )
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = KuroOnSurfaceVariant,
+            modifier = Modifier.size(20.dp)
         )
     }
-}
-
-@Composable
-private fun SettingsDivider() {
-    HorizontalDivider(
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
-        color = KuroSurfaceVariant
-    )
 }
 
 @Composable
@@ -377,7 +274,7 @@ private fun ChoiceDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title, fontWeight = FontWeight.Bold) },
+        title = { Text(title, fontFamily = GothamFontFamily, fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 options.forEachIndexed { index, option ->
@@ -396,13 +293,13 @@ private fun ChoiceDialog(
                             )
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = option, fontSize = 15.sp)
+                        Text(text = option, fontSize = 15.sp, fontFamily = GothamFontFamily)
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(onClick = onDismiss) { Text("Close", fontFamily = GothamFontFamily) }
         },
         containerColor = Color.White
     )

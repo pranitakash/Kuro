@@ -3,7 +3,6 @@ package com.kuro.music.presentation.ui.screens
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,17 +19,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -53,10 +54,7 @@ import coil.compose.AsyncImage
 import com.kuro.music.domain.model.Song
 import com.kuro.music.presentation.ui.components.AddToPlaylistSheet
 import com.kuro.music.presentation.ui.components.SongListItem
-import com.kuro.music.presentation.ui.theme.KuroChipSelected
-import com.kuro.music.presentation.ui.theme.KuroChipSelectedText
-import com.kuro.music.presentation.ui.theme.KuroChipUnselected
-import com.kuro.music.presentation.ui.theme.KuroChipUnselectedText
+import com.kuro.music.presentation.ui.theme.GothamFontFamily
 import com.kuro.music.presentation.ui.theme.KuroOnBackground
 import com.kuro.music.presentation.ui.theme.KuroOnSurfaceVariant
 import com.kuro.music.presentation.ui.theme.KuroPrimary
@@ -65,8 +63,6 @@ import com.kuro.music.presentation.viewmodel.DownloadsViewModel
 import com.kuro.music.presentation.viewmodel.HomeViewModel
 import com.kuro.music.presentation.viewmodel.LibraryViewModel
 import com.kuro.music.presentation.viewmodel.PlayerViewModel
-
-private val moods = listOf("Chill", "Party", "Focus", "Workout", "Sad", "Romance", "Road Trip", "Lo-fi", "Bollywood", "Pop")
 
 @Composable
 fun HomeScreen(
@@ -89,7 +85,7 @@ fun HomeScreen(
             .statusBarsPadding(),
         contentPadding = PaddingValues(bottom = 16.dp)
     ) {
-        // ─── Greeting Header ───
+        // ─── Greeting Header with bell + profile avatar ───
         item {
             Row(
                 modifier = Modifier
@@ -101,15 +97,41 @@ fun HomeScreen(
                 Text(
                     text = "Good ${getGreeting()}",
                     fontSize = 28.sp,
+                    fontFamily = GothamFontFamily,
                     fontWeight = FontWeight.Bold,
                     color = KuroOnBackground
                 )
-                IconButton(onClick = { homeViewModel.loadHome() }) {
-                    Icon(
-                        Icons.Default.Refresh,
-                        contentDescription = "Refresh",
-                        tint = KuroOnSurfaceVariant
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Notification bell
+                    IconButton(
+                        onClick = { },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Notifications,
+                            contentDescription = "Notifications",
+                            tint = KuroOnBackground,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    // Profile avatar
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(KuroSurfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Profile",
+                            tint = KuroOnSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         }
@@ -135,49 +157,18 @@ fun HomeScreen(
                     Text(
                         text = "Search",
                         fontSize = 15.sp,
+                        fontFamily = GothamFontFamily,
                         color = KuroOnSurfaceVariant
                     )
-                }
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-        }
-
-        // ─── Mood Chips ───
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                moods.forEach { mood ->
-                    val isSelected = homeState.selectedMood == mood
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(if (isSelected) KuroChipSelected else KuroChipUnselected)
-                            .clickable {
-                                homeViewModel.onMoodSelected(if (isSelected) null else mood)
-                            }
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = mood,
-                            fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (isSelected) KuroChipSelectedText else KuroChipUnselectedText
-                        )
-                    }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // ─── Recently Played (horizontal cards) ───
+        // ─── New music for you (featured cards) ───
         if (homeState.recentlyPlayed.isNotEmpty()) {
             item {
-                SectionHeader("Fresh new music")
+                SectionHeaderWithArrow("New music for you")
             }
             item {
                 LazyRow(
@@ -185,7 +176,7 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     items(homeState.recentlyPlayed) { song ->
-                        LargeCard(
+                        FeaturedCard(
                             song = song,
                             isPlaying = playerState.currentSong?.id == song.id,
                             onClick = { playerViewModel.playSong(song) }
@@ -196,10 +187,10 @@ fun HomeScreen(
             }
         }
 
-        // ─── Quick Picks (smaller square cards) ───
+        // ─── Today's biggest hits (smaller cards) ───
         if (homeState.quickPicks.isNotEmpty()) {
             item {
-                SectionHeader("Today's biggest hits")
+                SectionHeaderWithArrow("Today's biggest hits")
             }
             item {
                 LazyRow(
@@ -210,6 +201,27 @@ fun HomeScreen(
                         CompactSongCard(
                             song = song,
                             isPlaying = playerState.currentSong?.id == song.id,
+                            onClick = { playerViewModel.playSong(song) }
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(28.dp))
+            }
+        }
+
+        // ─── Suggested artists (circular avatars) ───
+        if (homeState.trending.isNotEmpty()) {
+            item {
+                SectionHeaderWithArrow("Suggested artists")
+            }
+            item {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(homeState.trending.take(10)) { song ->
+                        ArtistCircle(
+                            song = song,
                             onClick = { playerViewModel.playSong(song) }
                         )
                     }
@@ -236,12 +248,12 @@ fun HomeScreen(
             }
         }
 
-        // ─── Trending / Mood Results ───
+        // ─── Trending Music (list view) ───
         if (homeState.trending.isNotEmpty()) {
             item {
-                SectionHeader(
+                SectionHeaderWithArrow(
                     if (homeState.selectedMood != null) "${homeState.selectedMood} Vibes"
-                    else "Trending Music"
+                    else "Trending now"
                 )
             }
             items(homeState.trending) { song ->
@@ -274,6 +286,7 @@ fun HomeScreen(
                         Text(
                             text = "Couldn't load music",
                             fontSize = 16.sp,
+                            fontFamily = GothamFontFamily,
                             fontWeight = FontWeight.Medium,
                             color = KuroOnBackground
                         )
@@ -281,6 +294,7 @@ fun HomeScreen(
                         Text(
                             text = homeState.error ?: "",
                             fontSize = 13.sp,
+                            fontFamily = GothamFontFamily,
                             color = KuroOnSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -291,7 +305,12 @@ fun HomeScreen(
                                 .clickable { homeViewModel.loadHome() }
                                 .padding(horizontal = 24.dp, vertical = 10.dp)
                         ) {
-                            Text("Retry", color = Color.White, fontWeight = FontWeight.Medium)
+                            Text(
+                                "Retry",
+                                color = Color.White,
+                                fontFamily = GothamFontFamily,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
                     }
                 }
@@ -313,6 +332,7 @@ fun HomeScreen(
                         Text(
                             text = "Discovering music...",
                             fontSize = 16.sp,
+                            fontFamily = GothamFontFamily,
                             fontWeight = FontWeight.Medium,
                             color = KuroOnSurfaceVariant
                         )
@@ -347,18 +367,32 @@ fun HomeScreen(
 }
 
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        fontSize = 20.sp,
-        fontWeight = FontWeight.Bold,
-        color = KuroOnBackground,
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-    )
+private fun SectionHeaderWithArrow(title: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            fontSize = 20.sp,
+            fontFamily = GothamFontFamily,
+            fontWeight = FontWeight.Bold,
+            color = KuroOnBackground
+        )
+        Icon(
+            Icons.Default.ChevronRight,
+            contentDescription = "See more",
+            tint = KuroOnSurfaceVariant,
+            modifier = Modifier.size(22.dp)
+        )
+    }
 }
 
 @Composable
-private fun LargeCard(
+private fun FeaturedCard(
     song: Song,
     isPlaying: Boolean,
     onClick: () -> Unit
@@ -367,27 +401,68 @@ private fun LargeCard(
         modifier = Modifier
             .width(220.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(KuroSurfaceVariant)
             .clickable { onClick() }
     ) {
-        // Album art — top portion
+        // Album art with overlay title
         Box {
             AsyncImage(
                 model = song.thumbnailUrl,
                 contentDescription = song.title,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(170.dp)
-                    .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
+                    .height(200.dp)
+                    .clip(RoundedCornerShape(18.dp)),
                 contentScale = ContentScale.Crop
             )
 
-            // Play button floating on bottom-right of image
+            // Gradient overlay at bottom for text readability
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .align(Alignment.BottomCenter)
+                    .clip(RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.7f)
+                            )
+                        )
+                    )
+            )
+
+            // Title + song count at bottom-left
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(14.dp)
+            ) {
+                Text(
+                    text = song.title,
+                    fontSize = 15.sp,
+                    fontFamily = GothamFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = song.artist,
+                    fontSize = 12.sp,
+                    fontFamily = GothamFontFamily,
+                    color = Color.White.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Play button at bottom-right
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(10.dp)
-                    .size(36.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(Color.White),
                 contentAlignment = Alignment.Center
@@ -396,33 +471,9 @@ private fun LargeCard(
                     Icons.Default.PlayArrow,
                     contentDescription = "Play",
                     tint = KuroPrimary,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
-        }
-
-        // Title + artist below the image
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp)
-        ) {
-            Text(
-                text = song.title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = KuroOnBackground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = song.artist,
-                fontSize = 12.sp,
-                color = KuroOnSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }
@@ -472,11 +523,12 @@ private fun CompactSongCard(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = song.title,
             fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
+            fontFamily = GothamFontFamily,
+            fontWeight = FontWeight.Medium,
             color = KuroOnBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -484,7 +536,40 @@ private fun CompactSongCard(
         Text(
             text = song.artist,
             fontSize = 12.sp,
+            fontFamily = GothamFontFamily,
             color = KuroOnSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun ArtistCircle(
+    song: Song,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .width(80.dp)
+            .clickable { onClick() },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        AsyncImage(
+            model = song.thumbnailUrl,
+            contentDescription = song.artist,
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = song.artist,
+            fontSize = 11.sp,
+            fontFamily = GothamFontFamily,
+            fontWeight = FontWeight.Medium,
+            color = KuroOnBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )

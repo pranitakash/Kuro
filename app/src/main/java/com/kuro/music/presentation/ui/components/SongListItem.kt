@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.kuro.music.domain.model.Song
+import com.kuro.music.presentation.ui.theme.GothamFontFamily
 import com.kuro.music.presentation.ui.screens.formatDuration
 
 @Composable
@@ -74,6 +75,7 @@ fun SongListItem(
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.bodyMedium,
+                fontFamily = GothamFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 color = if (isPlaying) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurface,
@@ -83,6 +85,7 @@ fun SongListItem(
             Text(
                 text = "${song.artist} • ${formatDuration(song.duration)}",
                 style = MaterialTheme.typography.bodySmall,
+                fontFamily = GothamFontFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis

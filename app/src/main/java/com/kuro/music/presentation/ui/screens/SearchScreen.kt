@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,21 +20,19 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -48,12 +48,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kuro.music.domain.model.Song
 import com.kuro.music.presentation.ui.components.AddToPlaylistSheet
 import com.kuro.music.presentation.ui.components.SongListItem
+import com.kuro.music.presentation.ui.theme.GothamFontFamily
 import com.kuro.music.presentation.ui.theme.KuroChipSelected
 import com.kuro.music.presentation.ui.theme.KuroChipSelectedText
 import com.kuro.music.presentation.ui.theme.KuroChipUnselected
@@ -65,9 +67,11 @@ import com.kuro.music.presentation.ui.theme.KuroSurfaceVariant
 import com.kuro.music.presentation.viewmodel.DownloadsViewModel
 import com.kuro.music.presentation.viewmodel.LibraryViewModel
 import com.kuro.music.presentation.viewmodel.PlayerViewModel
-import com.kuro.music.presentation.viewmodel.SearchFilter
 import com.kuro.music.presentation.viewmodel.SearchViewModel
 
+private val genres = listOf("Rock", "Hip-Hop", "Pop", "Electronic", "R&B", "Indie", "Alternative", "Metal", "Jazz")
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SearchScreen(
     playerViewModel: PlayerViewModel,
@@ -81,6 +85,7 @@ fun SearchScreen(
     val context = LocalContext.current
 
     var songForPlaylist by remember { mutableStateOf<Song?>(null) }
+    var selectedGenre by remember { mutableStateOf("Rock") }
 
     Column(
         modifier = Modifier
@@ -88,10 +93,11 @@ fun SearchScreen(
             .background(Color.White)
             .statusBarsPadding()
     ) {
-        // ─── Search Header ───
+        // ─── Large "Search" heading ───
         Text(
             text = "Search",
-            fontSize = 28.sp,
+            fontSize = 32.sp,
+            fontFamily = GothamFontFamily,
             fontWeight = FontWeight.Bold,
             color = KuroOnBackground,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
@@ -107,9 +113,10 @@ fun SearchScreen(
                 .clip(RoundedCornerShape(14.dp)),
             placeholder = {
                 Text(
-                    "Songs, artists, albums...",
+                    "Artists, songs, or podcasts",
                     color = KuroOnSurfaceVariant,
-                    fontSize = 15.sp
+                    fontSize = 15.sp,
+                    fontFamily = GothamFontFamily
                 )
             },
             leadingIcon = {
@@ -146,158 +153,99 @@ fun SearchScreen(
             )
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // ─── Filter Chips ───
-        if (searchState.query.isNotBlank()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                SearchFilter.entries.forEach { filter ->
-                    val isSelected = searchState.selectedFilter == filter
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(if (isSelected) KuroChipSelected else KuroChipUnselected)
-                            .clickable { searchViewModel.onFilterSelected(filter) }
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = filter.label,
-                            fontSize = 13.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (isSelected) KuroChipSelectedText else KuroChipUnselectedText
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
+        Spacer(modifier = Modifier.height(16.dp))
 
         // ─── Content ───
         LazyColumn(
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            // Suggestions
-            if (searchState.suggestions.isNotEmpty() && searchState.results.isEmpty()) {
-                items(searchState.suggestions) { suggestion ->
+            // ─── Browse genres section (when no search query) ───
+            if (searchState.query.isBlank() && searchState.results.isEmpty()) {
+                item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                searchViewModel.onQueryChanged(suggestion)
-                                searchViewModel.search(suggestion)
-                            }
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                            .padding(horizontal = 20.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Default.TrendingUp,
-                            contentDescription = null,
-                            tint = KuroOnSurfaceVariant,
-                            modifier = Modifier
-                                .size(18.dp)
-                                .padding(end = 0.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = suggestion,
-                            fontSize = 15.sp,
+                            text = "Browse genres",
+                            fontSize = 18.sp,
+                            fontFamily = GothamFontFamily,
+                            fontWeight = FontWeight.Bold,
                             color = KuroOnBackground
                         )
-                    }
-                }
-            }
-
-            // Loading
-            if (searchState.isSearching) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = KuroPrimary,
-                            modifier = Modifier.size(28.dp),
-                            strokeWidth = 2.5.dp
+                        Text(
+                            text = "See all",
+                            fontSize = 13.sp,
+                            fontFamily = GothamFontFamily,
+                            color = KuroOnSurfaceVariant,
+                            modifier = Modifier.clickable { }
                         )
                     }
                 }
-            }
 
-            // Results
-            items(searchState.results) { song ->
-                SongListItem(
-                    song = song,
-                    isPlaying = playerState.currentSong?.id == song.id,
-                    onClick = { playerViewModel.playSong(song) },
-                    onAddToQueue = { playerViewModel.addToQueue(it) },
-                    onDownload = {
-                        downloadsViewModel.downloadSong(it)
-                        Toast.makeText(context, "Downloading ${it.title}", Toast.LENGTH_SHORT).show()
-                    },
-                    onAddToPlaylist = { songForPlaylist = it }
-                )
-            }
-
-            // Empty state
-            if (!searchState.isSearching && searchState.results.isEmpty() &&
-                searchState.query.isNotBlank() && searchState.suggestions.isEmpty()
-            ) {
                 item {
-                    Box(
+                    FlowRow(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(48.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "No results found",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = KuroOnBackground
-                            )
-                            Text(
-                                text = "Try different keywords",
-                                fontSize = 13.sp,
-                                color = KuroOnSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
+                        genres.forEach { genre ->
+                            val isSelected = selectedGenre == genre
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(if (isSelected) KuroChipSelected else KuroChipUnselected)
+                                    .clickable {
+                                        selectedGenre = genre
+                                        searchViewModel.onQueryChanged(genre)
+                                        searchViewModel.search(genre)
+                                    }
+                                    .padding(horizontal = 20.dp, vertical = 10.dp)
+                            ) {
+                                Text(
+                                    text = genre,
+                                    fontSize = 13.sp,
+                                    fontFamily = GothamFontFamily,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) KuroChipSelectedText else KuroChipUnselectedText
+                                )
+                            }
                         }
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
-            }
 
-            // ─── Initial state: search history ───
-            if (searchState.query.isBlank() && searchState.results.isEmpty()) {
+                // ─── Recent searches ───
                 if (searchState.searchHistory.isNotEmpty()) {
                     item {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                                .padding(horizontal = 20.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Recent Searches",
-                                fontSize = 16.sp,
+                                text = "Recent searches",
+                                fontSize = 18.sp,
+                                fontFamily = GothamFontFamily,
                                 fontWeight = FontWeight.Bold,
                                 color = KuroOnBackground
                             )
-                            TextButton(onClick = { searchViewModel.clearSearchHistory() }) {
-                                Text(
-                                    "Clear all",
-                                    fontSize = 13.sp,
-                                    color = KuroOnSurfaceVariant
-                                )
-                            }
+                            Text(
+                                text = "Clear",
+                                fontSize = 13.sp,
+                                fontFamily = GothamFontFamily,
+                                color = KuroOnSurfaceVariant,
+                                modifier = Modifier.clickable {
+                                    searchViewModel.clearSearchHistory()
+                                }
+                            )
                         }
                     }
 
@@ -312,19 +260,39 @@ fun SearchScreen(
                                 .padding(horizontal = 20.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                Icons.Default.History,
-                                contentDescription = null,
-                                tint = KuroOnSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = historyItem,
-                                fontSize = 15.sp,
-                                color = KuroOnBackground,
-                                modifier = Modifier.weight(1f)
-                            )
+                            // Circular avatar placeholder
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(KuroSurfaceVariant),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = KuroOnSurfaceVariant,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = historyItem,
+                                    fontSize = 15.sp,
+                                    fontFamily = GothamFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    color = KuroOnBackground,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = "Artist",
+                                    fontSize = 12.sp,
+                                    fontFamily = GothamFontFamily,
+                                    color = KuroOnSurfaceVariant
+                                )
+                            }
                             IconButton(
                                 onClick = { searchViewModel.removeFromHistory(historyItem) },
                                 modifier = Modifier.size(32.dp)
@@ -332,13 +300,16 @@ fun SearchScreen(
                                 Icon(
                                     Icons.Default.Close,
                                     contentDescription = "Remove",
-                                    tint = KuroOnSurfaceVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier.size(16.dp)
+                                    tint = KuroOnSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                     }
-                } else {
+                }
+
+                // ─── Empty state (no history) ───
+                if (searchState.searchHistory.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -358,16 +329,112 @@ fun SearchScreen(
                                 Text(
                                     text = "Search for music",
                                     fontSize = 16.sp,
+                                    fontFamily = GothamFontFamily,
                                     fontWeight = FontWeight.Medium,
                                     color = KuroOnSurfaceVariant
                                 )
                                 Text(
                                     text = "Find songs, artists, albums and playlists",
                                     fontSize = 13.sp,
+                                    fontFamily = GothamFontFamily,
                                     color = KuroOnSurfaceVariant.copy(alpha = 0.7f),
                                     modifier = Modifier.padding(top = 4.dp)
                                 )
                             }
+                        }
+                    }
+                }
+            }
+
+            // ─── Suggestions ───
+            if (searchState.suggestions.isNotEmpty() && searchState.results.isEmpty()) {
+                items(searchState.suggestions) { suggestion ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                searchViewModel.onQueryChanged(suggestion)
+                                searchViewModel.search(suggestion)
+                            }
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = KuroOnSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = suggestion,
+                            fontSize = 15.sp,
+                            fontFamily = GothamFontFamily,
+                            color = KuroOnBackground
+                        )
+                    }
+                }
+            }
+
+            // ─── Loading ───
+            if (searchState.isSearching) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = KuroPrimary,
+                            modifier = Modifier.size(28.dp),
+                            strokeWidth = 2.5.dp
+                        )
+                    }
+                }
+            }
+
+            // ─── Results ───
+            items(searchState.results) { song ->
+                SongListItem(
+                    song = song,
+                    isPlaying = playerState.currentSong?.id == song.id,
+                    onClick = { playerViewModel.playSong(song) },
+                    onAddToQueue = { playerViewModel.addToQueue(it) },
+                    onDownload = {
+                        downloadsViewModel.downloadSong(it)
+                        Toast.makeText(context, "Downloading ${it.title}", Toast.LENGTH_SHORT).show()
+                    },
+                    onAddToPlaylist = { songForPlaylist = it }
+                )
+            }
+
+            // ─── No results state ───
+            if (!searchState.isSearching && searchState.results.isEmpty() &&
+                searchState.query.isNotBlank() && searchState.suggestions.isEmpty()
+            ) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "No results found",
+                                fontSize = 16.sp,
+                                fontFamily = GothamFontFamily,
+                                fontWeight = FontWeight.Medium,
+                                color = KuroOnBackground
+                            )
+                            Text(
+                                text = "Try different keywords",
+                                fontSize = 13.sp,
+                                fontFamily = GothamFontFamily,
+                                color = KuroOnSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
                         }
                     }
                 }

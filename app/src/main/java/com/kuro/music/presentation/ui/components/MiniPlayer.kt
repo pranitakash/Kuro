@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.kuro.music.presentation.ui.theme.GothamFontFamily
 import com.kuro.music.presentation.ui.theme.KuroMiniPlayerBg
 import com.kuro.music.presentation.ui.theme.KuroMiniPlayerSecondary
 import com.kuro.music.presentation.ui.theme.KuroMiniPlayerText
@@ -90,6 +91,7 @@ fun MiniPlayer(
                         Text(
                             text = song.title,
                             fontSize = 14.sp,
+                            fontFamily = GothamFontFamily,
                             fontWeight = FontWeight.SemiBold,
                             color = KuroMiniPlayerText,
                             maxLines = 1,
@@ -98,6 +100,7 @@ fun MiniPlayer(
                         Text(
                             text = song.artist,
                             fontSize = 12.sp,
+                            fontFamily = GothamFontFamily,
                             color = KuroMiniPlayerSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
