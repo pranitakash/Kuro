@@ -1,0 +1,30 @@
+# Gradle files
+.gradle/
+build/
+
+# IDE files
+.idea/
+*.iml
+
+# Local configuration
+local.properties
+
+# Android Studio / IntelliJ
+*.keystore
+!debug.keystore
+*.jks
+*.p12
+*.key
+*.user
+*.jfm
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Temp files
+*.tmp
+*.temp
