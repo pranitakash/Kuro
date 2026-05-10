@@ -88,15 +88,32 @@ class InnertubeClient @Inject constructor(
     }
 
     /**
-     * Tries to get an audio stream URL. Only attempts ANDROID_MUSIC client
-     * to avoid wasting time on multiple failing clients.
-     * Fast-fails in ~4 seconds if YouTube is blocking API access.
+     * Tries to get an audio stream URL using multiple Innertube clients.
+     * Falls through quickly (~2s per client) so the caller can move to WebView.
      */
     suspend fun getAudioStreamUrlWithFallback(videoId: String): AudioStreamResult {
-        // Only try ANDROID_MUSIC — it's the most reliable for music.
-        // If it fails, the caller should move to WebView instead of wasting
-        // 8+ more seconds on ANDROID and iOS clients that will also fail.
-        return getAudioStreamUrl(videoId)
+        // Try ANDROID_MUSIC first (best for music content)
+        try {
+            return getAudioStreamUrl(videoId)
+        } catch (e: Exception) {
+            Log.d(TAG, "ANDROID_MUSIC failed: ${e.message}")
+        }
+
+        // Try ANDROID client
+        try {
+            return getAudioStreamUrlAndroid(videoId)
+        } catch (e: Exception) {
+            Log.d(TAG, "ANDROID failed: ${e.message}")
+        }
+
+        // Try iOS client (different CDN routing, sometimes works when Android is blocked)
+        try {
+            return getAudioStreamUrlIOS(videoId)
+        } catch (e: Exception) {
+            Log.d(TAG, "IOS failed: ${e.message}")
+        }
+
+        throw Exception("All Innertube clients failed for $videoId")
     }
 
     private suspend fun getAudioStreamUrlAndroid(videoId: String): AudioStreamResult =

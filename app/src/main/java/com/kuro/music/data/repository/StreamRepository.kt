@@ -10,6 +10,7 @@ import com.kuro.music.data.remote.YtDlpExtractor
 import com.kuro.music.data.remote.dto.PipedStreamResponse
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -51,15 +52,23 @@ class StreamRepository @Inject constructor(
     /**
      * Resolves the best audio stream URL for a video.
      *
-     * Simple sequential strategy:
+     * Strategy (ordered by current reliability):
      * 1. In-memory cache (instant)
      * 2. Room DB cache (instant)
-     * 3. Innertube API (fast, ~1-2s, fast-fails in 4s if blocked)
-     * 4. WebView extraction (reliable, pre-warmed & reused)
-     * 5. Piped API instances (fallback)
+     * 3. Piped API instances (most reliable — Innertube is blocked by YouTube)
+     * 4. Innertube API (fast-fail fallback, currently returns LOGIN_REQUIRED)
+     * 5. WebView extraction (slow but sometimes works)
      * 6. yt-dlp binary (last resort)
      */
     suspend fun resolveStreamUrl(videoId: String): String {
+        // Global timeout to prevent the app from hanging forever
+        val result = withTimeoutOrNull(15_000L) {
+            resolveStreamUrlInternal(videoId)
+        }
+        return result ?: throw Exception("Stream resolution timed out — try again")
+    }
+
+    private suspend fun resolveStreamUrlInternal(videoId: String): String {
         // 1. Check in-memory cache
         cacheMutex.withLock {
             urlCache[videoId]?.let { cached ->
@@ -78,29 +87,7 @@ class StreamRepository @Inject constructor(
             return cachedUrl
         }
 
-        // 3. Try Innertube API (fast, with 4s timeout per client)
-        try {
-            Log.d(TAG, "Trying Innertube for $videoId...")
-            val result = innertubeClient.getAudioStreamUrlWithFallback(videoId)
-            Log.d(TAG, "Innertube success: ${result.mimeType} @ ${result.bitrate}bps")
-            cacheUrl(videoId, result.url)
-            return result.url
-        } catch (e: Exception) {
-            Log.w(TAG, "Innertube failed for $videoId: ${e.message}")
-        }
-
-        // 4. Try WebView extraction (pre-warmed, reused)
-        try {
-            Log.d(TAG, "Trying WebView extraction for $videoId...")
-            val url = webViewExtractor.extractAudioUrl(videoId)
-            Log.d(TAG, "WebView extraction success!")
-            cacheUrl(videoId, url)
-            return url
-        } catch (e: Exception) {
-            Log.w(TAG, "WebView extraction failed for $videoId: ${e.message}")
-        }
-
-        // 5. Try Piped API instances (fallback)
+        // 3. Try Piped API instances first (currently most reliable)
         for (instanceUrl in PipedInstanceManager.INSTANCES) {
             try {
                 Log.d(TAG, "Trying Piped instance: $instanceUrl")
@@ -117,6 +104,28 @@ class StreamRepository @Inject constructor(
             } catch (e: Exception) {
                 Log.d(TAG, "Piped failed ($instanceUrl): ${e.message}")
             }
+        }
+
+        // 4. Try Innertube API (currently blocked, fast-fails in ~2s per client)
+        try {
+            Log.d(TAG, "Trying Innertube for $videoId...")
+            val result = innertubeClient.getAudioStreamUrlWithFallback(videoId)
+            Log.d(TAG, "Innertube success: ${result.mimeType} @ ${result.bitrate}bps")
+            cacheUrl(videoId, result.url)
+            return result.url
+        } catch (e: Exception) {
+            Log.w(TAG, "Innertube failed for $videoId: ${e.message}")
+        }
+
+        // 5. Try WebView extraction (pre-warmed, reused)
+        try {
+            Log.d(TAG, "Trying WebView extraction for $videoId...")
+            val url = webViewExtractor.extractAudioUrl(videoId)
+            Log.d(TAG, "WebView extraction success!")
+            cacheUrl(videoId, url)
+            return url
+        } catch (e: Exception) {
+            Log.w(TAG, "WebView extraction failed for $videoId: ${e.message}")
         }
 
         // 6. Final fallback: yt-dlp
@@ -148,14 +157,31 @@ class StreamRepository @Inject constructor(
         }
         songDao.getCachedStreamUrl(videoId)?.let { return }
 
-        // Only try Innertube for prefetch — never WebView
+        // Try Piped first for prefetch (Innertube is currently blocked)
+        try {
+            val instance = instanceManager.getCurrentInstance()
+            val api = createApiForInstance(instance)
+            val response = api.getStreams(videoId)
+            val bestAudio = response.audioStreams
+                .filter { it.mimeType.contains("audio") }
+                .maxByOrNull { it.bitrate }
+            if (bestAudio != null) {
+                cacheUrl(videoId, bestAudio.url)
+                Log.d(TAG, "Prefetch success (Piped) for $videoId")
+                return
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Prefetch Piped failed for $videoId: ${e.message}")
+        }
+
+        // Fallback to Innertube for prefetch
         try {
             val result = innertubeClient.getAudioStreamUrlWithFallback(videoId)
             cacheUrl(videoId, result.url)
             Log.d(TAG, "Prefetch success (Innertube) for $videoId")
         } catch (e: Exception) {
             // Silently fail — prefetch is best-effort
-            Log.d(TAG, "Prefetch skipped for $videoId (Innertube unavailable)")
+            Log.d(TAG, "Prefetch skipped for $videoId (all sources unavailable)")
         }
     }
 

@@ -52,25 +52,31 @@ import com.kuro.music.presentation.ui.components.QueueBottomSheet
 import com.kuro.music.presentation.ui.screens.NowPlayingScreen
 import com.kuro.music.presentation.ui.theme.KuroMiniPlayerBg
 import com.kuro.music.presentation.ui.theme.KuroTheme
+import com.kuro.music.data.repository.LyricsRepository
 import com.kuro.music.presentation.viewmodel.LibraryViewModel
 import com.kuro.music.presentation.viewmodel.PlayerViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var lyricsRepository: LyricsRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             KuroTheme {
-                KuroApp()
+                KuroApp(lyricsRepository = lyricsRepository)
             }
         }
     }
 }
 
 @Composable
-fun KuroApp() {
+fun KuroApp(lyricsRepository: LyricsRepository) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -196,7 +202,8 @@ fun KuroApp() {
                     onToggleShuffle = { playerViewModel.toggleShuffle() },
                     onToggleRepeat = { playerViewModel.toggleRepeat() },
                     onToggleLike = { playerViewModel.toggleLike() },
-                    onShowQueue = { showQueue = true }
+                    onShowQueue = { showQueue = true },
+                    lyricsRepository = lyricsRepository
                 )
             }
 

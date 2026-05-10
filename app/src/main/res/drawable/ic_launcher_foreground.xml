@@ -3,12 +3,29 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Music note icon for Kuro -->
+    <!-- Kuro waveform logo - centered black soundwave bars -->
+    <!-- Bar 1 (left) - short -->
     <path
-        android:fillColor="#8B5CF6"
-        android:pathData="M54,54m-28,0a28,28 0,1 1,56 0a28,28 0,1 1,-56 0"/>
+        android:fillColor="#000000"
+        android:pathData="M30,46 C30,44.9 30.9,44 32,44 L34,44 C35.1,44 36,44.9 36,46 L36,62 C36,63.1 35.1,64 34,64 L32,64 C30.9,64 30,63.1 30,62 Z"/>
+    <!-- Bar 2 - medium -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M62,38v18.5c0,0 0,0.1 0,0.1c-0.4,-0.1 -0.8,-0.1 -1.2,-0.1c-3.3,0 -6,2.2 -6,5s2.7,5 6,5s6,-2.2 6,-5V44h6v-6H62z
-                          M47.2,42v14.5c0,0 0,0.1 0,0.1c-0.4,-0.1 -0.8,-0.1 -1.2,-0.1c-3.3,0 -6,2.2 -6,5s2.7,5 6,5s6,-2.2 6,-5V48h6v-6H47.2z"/>
+        android:fillColor="#000000"
+        android:pathData="M39,40 C39,38.9 39.9,38 41,38 L43,38 C44.1,38 45,38.9 45,40 L45,68 C45,69.1 44.1,70 43,70 L41,70 C39.9,70 39,69.1 39,68 Z"/>
+    <!-- Bar 3 - tall -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M48,34 C48,32.9 48.9,32 50,32 L52,32 C53.1,32 54,32.9 54,34 L54,74 C54,75.1 53.1,76 52,76 L50,76 C48.9,76 48,75.1 48,74 Z"/>
+    <!-- Bar 4 - tallest (center peak) -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M57,30 C57,28.9 57.9,28 59,28 L61,28 C62.1,28 63,28.9 63,30 L63,78 C63,79.1 62.1,80 61,80 L59,80 C57.9,80 57,79.1 57,78 Z"/>
+    <!-- Bar 5 - medium-tall -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M66,36 C66,34.9 66.9,34 68,34 L70,34 C71.1,34 72,34.9 72,36 L72,72 C72,73.1 71.1,74 70,74 L68,74 C66.9,74 66,73.1 66,72 Z"/>
+    <!-- Bar 6 - medium -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M75,42 C75,40.9 75.9,40 77,40 L79,40 C80.1,40 81,40.9 81,42 L81,66 C81,67.1 80.1,68 79,68 L77,68 C75.9,68 75,67.1 75,66 Z"/>
 </vector>

@@ -217,19 +217,24 @@ class PlayerViewModel @Inject constructor(
             Log.d(TAG, "playSong called: ${song.title} (id: ${song.id})")
 
             try {
-                // Run stream resolution and controller connection IN PARALLEL
-                // This saves 1-3 seconds vs doing them sequentially
-                val streamUrlDeferred = async {
-                    Log.d(TAG, "Resolving stream URL...")
+                // Resolve stream URL
+                Log.d(TAG, "Resolving stream URL...")
+                val streamUrl = try {
                     streamRepository.resolveStreamUrl(song.id)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e // Don't swallow cancellation
+                } catch (e: Exception) {
+                    Log.e(TAG, "Stream resolution failed: ${e.message}", e)
+                    _playerState.value = _playerState.value.copy(
+                        isLoading = false,
+                        error = "Could not load song — ${e.message ?: "try again"}"
+                    )
+                    return@launch
                 }
-                val controllerDeferred = async { awaitController() }
-
-                // Await both results
-                val streamUrl = streamUrlDeferred.await()
                 Log.d(TAG, "Stream URL resolved: ${streamUrl.take(80)}...")
 
-                val controller = controllerDeferred.await()
+                // Connect to media controller
+                val controller = awaitController()
                 if (controller == null) {
                     Log.e(TAG, "MediaController not available after waiting")
                     _playerState.value = _playerState.value.copy(
@@ -270,6 +275,8 @@ class PlayerViewModel @Inject constructor(
                 )
                 Log.d(TAG, "Play command issued for: ${song.title}")
 
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e // Rethrow cancellation — this is not an error
             } catch (e: Exception) {
                 Log.e(TAG, "playSong failed: ${e.message}", e)
                 _playerState.value = _playerState.value.copy(
